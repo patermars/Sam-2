@@ -5,3 +5,6 @@ body {
     max-width: 600px;
     margin: auto;
 }
+.video-container {
+    position: relative;
+}
