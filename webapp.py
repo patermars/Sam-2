@@ -1,4 +1,4 @@
-from flask import Flask, render_template, request, send_from_directory, jsonify
+from flask import Flask, render_template, request, jsonify ,send_from_directory
 from pytubefix import YouTube
 from pytubefix.cli import on_progress
 import os
@@ -28,6 +28,15 @@ def download_video():
 @app.route('/video/<filename>')
 def serve_video(filename):
     return send_from_directory(DOWNLOAD_FOLDER, filename)
+
+@app.route('/coordinates', methods=['POST'])
+def log_coordinates():
+    data = request.json
+    x = data['x']
+    y = data['y']
+    current_time = data['currentTime']
+    print(f'Coordinates received - X: {x}, Y: {y}, Time: {current_time}')
+    return jsonify({'status': 'success'})
 
 if __name__ == '__main__':
     app.run(debug=True)

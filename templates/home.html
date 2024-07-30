@@ -5,7 +5,18 @@
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>SAM 2 Demo Landing Page</title>
     <link rel="stylesheet" href="https://maxcdn.bootstrapcdn.com/bootstrap/4.5.2/css/bootstrap.min.css">
-    <link rel="stylesheet" href="static/style.css">
+    <style>
+        body {
+            padding: 20px;
+        }
+        .container {
+            max-width: 600px;
+            margin: auto;
+        }
+        .video-container {
+            position: relative;
+        }
+    </style>
 </head>
 <body>
     <div class="container">
@@ -27,6 +38,51 @@
 
     <script src="https://code.jquery.com/jquery-3.5.1.min.js"></script>
     <script src="https://maxcdn.bootstrapcdn.com/bootstrap/4.5.2/js/bootstrap.min.js"></script>
-    <script src="static/script.js"></script>
+    <script>
+        $(document).ready(function(){
+            $('#videoForm').on('submit', function(e){
+                e.preventDefault();
+                var videoUrl = $('#videoUrl').val();
+                $('#videoContainer').html(`<p>Downloading video: ${videoUrl}</p>`);
+                
+                $.post('/download', { videoUrl: videoUrl }, function(response){
+                    if (response.error) {
+                        $('#videoContainer').html(`<p>Error: ${response.error}</p>`);
+                    } else {
+                        var videoUrl = `/video/${response.filename}`;
+                        $('#videoContainer').html(`
+                            <div class="video-container">
+                                <video id="videoElement" controls>
+                                    <source src="${videoUrl}" type="video/mp4">
+                                    Your browser does not support the video tag.
+                                </video>
+                            </div>
+                        `);
+
+                        $('#videoElement').on('click', function(event){
+                            var videoElement = this;
+                            var rect = videoElement.getBoundingClientRect();
+
+                            var x = event.clientX - rect.left; // X-coordinate relative to the video element
+                            var y = event.clientY - rect.top;  // Y-coordinate relative to the video element
+
+                            var currentTime = videoElement.currentTime;
+
+                            // Send coordinates and current time to Flask server
+                            $.ajax({
+                                url: '/coordinates',
+                                type: 'POST',
+                                contentType: 'application/json',
+                                data: JSON.stringify({ x: x, y: y, currentTime: currentTime }),
+                                success: function(response) {
+                                    console.log('Coordinates sent successfully:', response);
+                                }
+                            });
+                        });
+                    }
+                });
+            });
+        });
+    </script>
 </body>
 </html>
