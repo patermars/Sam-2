@@ -13,6 +13,7 @@
             font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
         }
         .container {
+            position: relative;
             max-width: 800px;
             margin: auto;
             background-color: white;
@@ -48,6 +49,23 @@
         .form-group input {
             border-radius: 4px;
         }
+        .btn-small-square {
+            width: 50px;
+            height: 50px;
+            padding: 0;
+            border-radius: 50%;
+            margin: 5px;
+        }
+        .side-buttons {
+            position: absolute;
+            bottom: 25%;
+            left: -40px;
+            display: flex;
+            flex-direction: column;
+        }
+        .modal-body input {
+            border-radius: 4px;
+        }
         .video-container {
             position: relative;
             margin-top: 20px;
@@ -74,30 +92,47 @@
                 <button type="submit" class="btn btn-primary btn-block"><i class="fas fa-download"></i> Download Video</button>
             </form>
         </div>
+
+        <div class="side-buttons">
+            <button id="trimButton" class="btn btn-primary btn-small-square" data-toggle="modal" data-target="#trimModal">
+                <i class="fas fa-cut"></i>
+            </button>
+            <button id="maskButton" class="btn btn-primary btn-small-square">
+                <i class="fas fa-mask"></i>
+            </button>
+        </div>
         
         <div id="videoContainer" class="video-container mt-4">
             <!-- Video and tracking output will be displayed here -->
         </div>
-        
-        <div id="trimContainer" class="card p-4 mt-4" style="display:none;">
-            <h3 class="text-center">Trim Video</h3>
-            <form id="trimForm" action="/trim" method="post">
-                <div class="form-group">
-                    <label for="startTime"><i class="fas fa-play"></i> Start Time (in seconds):</label>
-                    <input type="number" class="form-control" id="startTime" name="startTime" required>
-                </div>
-                <div class="form-group">
-                    <label for="endTime"><i class="fas fa-stop"></i> End Time (in seconds):</label>
-                    <input type="number" class="form-control" id="endTime" name="endTime" required>
-                </div>
-                <input type="hidden" id="filename" name="filename">
-                <button type="submit" class="btn btn-primary btn-block"><i class="fas fa-cut"></i> Trim Video</button>
-            </form>
-        </div>
 
-        <div id="maskContainer" class="card p-4 mt-4" style="display:none;">
-            <button id="maskButton" class="btn btn-primary btn-block"><i class="fas fa-mask"></i> Mask Object</button>
+        <div class="modal fade" id="trimModal" tabindex="-1" role="dialog" aria-labelledby="trimModalLabel" aria-hidden="true">
+            <div class="modal-dialog" role="document">
+                <div class="modal-content">
+                    <div class="modal-header">
+                        <h5 class="modal-title" id="trimModalLabel">Trim Video</h5>
+                        <button type="button" class="close" data-dismiss="modal" aria-label="Close">
+                            <span aria-hidden="true">&times;</span>
+                        </button>
+                    </div>
+                    <div class="modal-body">
+                        <form id="trimForm" action="/trim" method="post">
+                            <div class="form-group">
+                                <label for="startTime"><i class="fas fa-play"></i> Start Time (in seconds):</label>
+                                <input type="number" class="form-control" id="startTime" name="startTime" required>
+                            </div>
+                            <div class="form-group">
+                                <label for="endTime"><i class="fas fa-stop"></i> End Time (in seconds):</label>
+                                <input type="number" class="form-control" id="endTime" name="endTime" required>
+                            </div>
+                            <input type="hidden" id="filename" name="filename">
+                            <button type="submit" class="btn btn-primary btn-block">Trim Video</button>
+                        </form>
+                    </div>
+                </div>
+            </div>
         </div>
+        
         <div id="processContainer" class="card p-4 mt-4" style="display:none;">
             <button id="processButton" class="btn btn-primary btn-block"><i class="fas fa-cogs"></i> Process Video</button>
         </div>
