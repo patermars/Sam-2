@@ -5,60 +5,101 @@
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>SAM 2 Demo Landing Page</title>
     <link rel="stylesheet" href="https://maxcdn.bootstrapcdn.com/bootstrap/4.5.2/css/bootstrap.min.css">
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/5.15.3/css/all.min.css">
     <style>
         body {
-            padding: 20px;
+            padding-top: 20px;
+            background: linear-gradient(120deg, #fdfbfb, #ebedee);
+            font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
         }
         .container {
-            max-width: 600px;
+            max-width: 800px;
             margin: auto;
+            background-color: white;
+            padding: 30px;
+            border-radius: 8px;
+            box-shadow: 0 4px 8px rgba(0, 0, 0, 0.1);
+        }
+        .card {
+            border: none;
+            border-radius: 8px;
+            box-shadow: 0 2px 4px rgba(0, 0, 0, 0.1);
+        }
+        h1, h3 {
+            font-weight: 700;
+            color: #343a40;
+        }
+        p {
+            color: #6c757d;
+        }
+        .btn-primary {
+            background-color: #007bff;
+            border: none;
+            box-shadow: 0 2px 4px rgba(0, 123, 255, 0.4);
+            transition: background-color 0.3s, box-shadow 0.3s;
+        }
+        .btn-primary:hover {
+            background-color: #0056b3;
+            box-shadow: 0 4px 8px rgba(0, 123, 255, 0.6);
+        }
+        label {
+            font-weight: 600;
+        }
+        .form-group input {
+            border-radius: 4px;
         }
         .video-container {
             position: relative;
+            margin-top: 20px;
         }
         .crosshair-cursor {
             cursor: crosshair;
         }
+        .mt-4 {
+            margin-top: 1.5rem !important;
+        }
     </style>
 </head>
 <body>
-    <div class="container">
+    <div class="container mt-4">
         <h1 class="text-center">SAM 2 Demo</h1>
         <p class="text-center">Explore the power of object tracking in videos with Meta's SAM 2 model.</p>
         
-        <form id="videoForm" action="/download" method="post">
-            <div class="form-group">
-                <label for="videoUrl">Enter YouTube Video URL:</label>
-                <input type="url" class="form-control" id="videoUrl" name="videoUrl" placeholder="https://www.youtube.com/watch?v=example" required>
-            </div>
-            <button type="submit" class="btn btn-primary btn-block">Download Video</button>
-        </form>
+        <div class="card p-4 mb-4">
+            <form id="videoForm" action="/download" method="post">
+                <div class="form-group">
+                    <label for="videoUrl"><i class="fas fa-link"></i> Enter YouTube Video URL:</label>
+                    <input type="url" class="form-control" id="videoUrl" name="videoUrl" placeholder="https://www.youtube.com/watch?v=example" required>
+                </div>
+                <button type="submit" class="btn btn-primary btn-block"><i class="fas fa-download"></i> Download Video</button>
+            </form>
+        </div>
         
-        <div id="videoContainer" class="mt-4">
+        <div id="videoContainer" class="video-container mt-4">
             <!-- Video and tracking output will be displayed here -->
         </div>
         
-        <div id="trimContainer" class="mt-4" style="display:none;">
+        <div id="trimContainer" class="card p-4 mt-4" style="display:none;">
             <h3 class="text-center">Trim Video</h3>
             <form id="trimForm" action="/trim" method="post">
                 <div class="form-group">
-                    <label for="startTime">Start Time (in seconds):</label>
+                    <label for="startTime"><i class="fas fa-play"></i> Start Time (in seconds):</label>
                     <input type="number" class="form-control" id="startTime" name="startTime" required>
                 </div>
                 <div class="form-group">
-                    <label for="endTime">End Time (in seconds):</label>
+                    <label for="endTime"><i class="fas fa-stop"></i> End Time (in seconds):</label>
                     <input type="number" class="form-control" id="endTime" name="endTime" required>
                 </div>
                 <input type="hidden" id="filename" name="filename">
-                <button type="submit" class="btn btn-primary btn-block">Trim Video</button>
+                <button type="submit" class="btn btn-primary btn-block"><i class="fas fa-cut"></i> Trim Video</button>
             </form>
         </div>
 
-        <div id="maskContainer" class="mt-4" style="display:none;">
-            <button id="maskButton" class="btn btn-primary btn-block">Mask Object</button>
+        <div id="maskContainer" class="card p-4 mt-4" style="display:none;">
+            <button id="maskButton" class="btn btn-primary btn-block"><i class="fas fa-mask"></i> Mask Object</button>
         </div>
-        <div id="processContainer" class="mt-4" style="display:none;">
-            <button id="processButton" class="btn btn-primary btn-block">Process Video</button>
+        <div id="processContainer" class="card p-4 mt-4" style="display:none;">
+            <button id="processButton" class="btn btn-primary btn-block"><i class="fas fa-cogs"></i> Process Video</button>
         </div>
     </div>
 
