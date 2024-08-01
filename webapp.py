@@ -56,9 +56,10 @@ def log_coordinates():
     x = data['x']
     y = data['y']
     current_time = data['currentTime']
-    coordinates = {'x': x, 'y': y, 'time': current_time}
+    label=data['label']
+    coordinates = {'x': x, 'y': y, 'time': current_time,'label':label}
     coordinates_list.append(coordinates)
-    print(f'Coordinates received - X: {x}, Y: {y}, Time: {current_time}')
+    print(f'Coordinates received - X: {x}, Y: {y}, Time: {current_time}, Label : {label}')
     return jsonify({'status': 'success'})
 
 @app.route('/trim', methods=['POST'])
