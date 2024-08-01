@@ -62,11 +62,11 @@ def main(old_video_path, coordinates_list):
     # Process each coordinate
     for coordinates in coordinates_list:
         x, y, current_time = coordinates['x'], coordinates['y'], coordinates['time']
-        ann_frame_idx = coordinates['frame']  # Assuming this is intentional
-        ann_obj_id = coordinates['ann_obj_id']  # Example object ID
+        ann_frame_idx = round(current_time*30) # the frame index we interact with
+        ann_obj_id = coordinates['ann_obj_id']  # give a unique id to each object we interact with (it can be any integers)
 
         label_data=coordinates['label']
-
+        # for labels, `1` means positive click and `0` means negative click
         points = np.array([[x, y]], dtype=np.float32)
         labels = np.array([label_data], np.int32)
 

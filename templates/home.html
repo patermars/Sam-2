@@ -163,7 +163,6 @@
                                 </video>
                             </div>
                         `);
-                        $('#trimContainer').show();
                         $('#filename').val(response.filename);
                     }
                 });
@@ -172,6 +171,7 @@
             $('#trimForm').on('submit', function(e){
                 e.preventDefault();
                 var formData = $(this).serialize();
+                $('#trimModal').modal('hide');
                 
                 $.post('/trim', formData, function(response){
                     if (response.error) {
@@ -186,7 +186,6 @@
                                 </video>
                             </div>
                         `);
-                        $('#maskContainer').show();
                         $('#filename').val(response.filename);
                     }
                 });
