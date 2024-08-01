@@ -22,13 +22,14 @@ def show_mask(mask, ax, obj_id=None, random_color=False):
 
 
 def show_points(coords, labels, ax, marker_size=200):
-    pos_points = coords[labels==1]
-    neg_points = coords[labels==0]
+    pos_points = coords[labels == 1]
+    neg_points = coords[labels == 0]
     ax.scatter(pos_points[:, 0], pos_points[:, 1], color='green', marker='*', s=marker_size, edgecolor='white', linewidth=1.25)
     ax.scatter(neg_points[:, 0], neg_points[:, 1], color='red', marker='*', s=marker_size, edgecolor='white', linewidth=1.25)
 
-def main(old_video_path,coordinates_list):
-    video_path=f"/content/downloads/{old_video_path}"
+
+def main(old_video_path, coordinates_list):
+    video_path = f"/content/downloads/{old_video_path}"
     torch.autocast(device_type="cuda", dtype=torch.bfloat16).__enter__()
 
     if torch.cuda.get_device_properties(0).major >= 8:
@@ -43,12 +44,7 @@ def main(old_video_path,coordinates_list):
     video_dir = "video_dir"
     if not os.path.exists(video_dir):
         os.makedirs(video_dir)
-    video_dir ="/content/video_dir"
-
-    # # Extract frame rate from the video
-    # frame_rate = get_frame_rate(video_path)
-    # if frame_rate is None:
-    #     raise ValueError("Could not determine the frame rate of the video.")
+    video_dir = "/content/video_dir"
 
     command = f"ffmpeg -i {video_path} -q:v 2 -start_number 0 {video_dir}/'%05d.jpg'"
     subprocess.run(command, shell=True, check=True)
@@ -82,7 +78,7 @@ def main(old_video_path,coordinates_list):
         plt.imshow(Image.open(os.path.join(video_dir, frame_names[ann_frame_idx])))
         show_points(points, labels, plt.gca())
         show_mask((out_mask_logits[0] > 0.0).cpu().numpy(), plt.gca(), obj_id=out_obj_ids[0])
-        
+
         # Save the plot before showing it
         output_path = f"output_frame_{ann_frame_idx}.png"
         plt.savefig(output_path)
@@ -92,3 +88,40 @@ def main(old_video_path,coordinates_list):
 
         # Clear the current figure to prepare for the next one
         plt.clf()
+
+        # Propagate the mask throughout the entire video
+        video_segments = {}  # video_segments contains the per-frame segmentation results
+        for out_frame_idx, out_obj_ids, out_mask_logits in predictor.propagate_in_video(inference_state):
+            video_segments[out_frame_idx] = {
+                out_obj_id: (out_mask_logits[i] > 0.0).cpu().numpy()
+                for i, out_obj_id in enumerate(out_obj_ids)
+            }
+
+        # Save the propagated frames
+        output_frames_dir = "/content/output_frames"
+        if not os.path.exists(output_frames_dir):
+            os.makedirs(output_frames_dir)
+
+        for out_frame_idx, frame_name in enumerate(frame_names):
+            plt.figure(figsize=(12, 8))
+            plt.title(f"frame {out_frame_idx}")
+            plt.imshow(Image.open(os.path.join(video_dir, frame_name)))
+            if out_frame_idx in video_segments:
+                for out_obj_id, out_mask in video_segments[out_frame_idx].items():
+                    show_mask(out_mask, plt.gca(), obj_id=out_obj_id)
+            output_frame_path = os.path.join(output_frames_dir, f"{out_frame_idx:05d}.png")
+            plt.savefig(output_frame_path)
+            plt.close()
+
+    # Merge the frames into a video
+    output_video_path = "/content/output_video.mp4"
+    command = f"ffmpeg -framerate 30 -i {output_frames_dir}/%05d.png -c:v libx264 -pix_fmt yuv420p {output_video_path}"
+    subprocess.run(command, shell=True, check=True)
+
+if __name__ == "__main__":
+    coordinates_list = [
+        {'x': 61, 'y': 88, 'time': 0.723832},
+        # Add more coordinates as needed
+    ]
+    old_video_path = "trimmed_0.mp4"
+    main(old_video_path, coordinates_list)
