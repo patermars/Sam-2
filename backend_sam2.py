@@ -136,9 +136,9 @@ def main(old_video_path, coordinates_list):
 
 if __name__ == "__main__":
     coordinates_list = [
-        {'x': 61, 'y': 88, 'time': 0.723832,'ann_obj_id':1,'label':1,'frame':0},
-        {'x': 560, 'y': 159, 'time': 1.231422,'ann_obj_id':2,'label':1,'frame':0},
-        {'x': 61, 'y': 88, 'time': 0.723832,'ann_obj_id':1,'label':0,'frame':150}
+        {'x': 61, 'y': 88, 'time': 0.723832,'ann_obj_id':1,'label':1},
+        {'x': 560, 'y': 159, 'time': 1.231422,'ann_obj_id':2,'label':1},
+        {'x': 61, 'y': 88, 'time': 0.723832,'ann_obj_id':1,'label':0}
         # Add more coordinates as needed
     ]
     old_video_path = "trimmed_0.mp4"

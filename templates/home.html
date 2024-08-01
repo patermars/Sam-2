@@ -76,6 +76,18 @@
         .mt-4 {
             margin-top: 1.5rem !important;
         }
+        .radio-container {
+            position: absolute;
+            top: 25%;
+            right: 40px;
+            display: flex;
+            flex-direction: column;
+            margin-top: 20px;
+            display: block; /* Initially hidden */
+        }
+        .radio-container label {
+            margin-right: 10px;
+        }
     </style>
 </head>
 <body>
@@ -103,6 +115,10 @@
             <button id="unmaskButton" class="btn btn-primary btn-small-square">
                 <i class="fas fa-mask"></i> <i class="fas fa-eye-slash"></i>
             </button>
+        </div>
+
+        <div class="radio-container" id="radioContainer">
+            <!-- Radio buttons will be appended here -->
         </div>
         
         <div id="videoContainer" class="video-container mt-4">
@@ -145,6 +161,9 @@
     <script src="https://maxcdn.bootstrapcdn.com/bootstrap/4.5.2/js/bootstrap.min.js"></script>
     <script>
         $(document).ready(function(){
+
+            let maskCount = 0; // To keep track of the number of masks
+
             $('#videoForm').on('submit', function(e){
                 e.preventDefault();
                 var videoUrl = $('#videoUrl').val();
@@ -204,12 +223,24 @@
 
                     var currentTime = videoElement.currentTime;
 
+                    // Create a new radio button
+                    maskCount++;
+                    var radioHtml = `
+                        <div class="form-check">
+                            <input class="form-check-input" type="radio" name="object" id="object${maskCount}" value="${maskCount}">
+                            <label class="form-check-label" for="object${maskCount}">
+                                Object ${maskCount}
+                            </label>
+                        </div>
+                    `;
+                    $('#radioContainer').append(radioHtml);
+
                     // Send coordinates to Flask server
                     $.ajax({
                         url: '/coordinates',
                         type: 'POST',
                         contentType: 'application/json',
-                        data: JSON.stringify({ x: x, y: y, currentTime: currentTime,label : 1 }),
+                        data: JSON.stringify({ x: x, y: y, currentTime: currentTime,label : 1, ann_obj_id: maskCount}),
                         success: function(response) {
                             console.log('Coordinates sent successfully:', response);
                         }
@@ -221,34 +252,42 @@
             });
 
             $('#unmaskButton').on('click', function(){
-                var videoElement = document.getElementById('videoElement');
-                videoElement.pause();
-                $('#videoElement').addClass('crosshair-cursor');
 
-                $('#videoElement').on('click', function(event){
-                    var rect = videoElement.getBoundingClientRect();
+                var selectedRadio = $('input[name="object"]:checked');
+                if (selectedRadio.length > 0) {
+                    var selectedValue = selectedRadio.val();
+                    var videoElement = document.getElementById('videoElement');
+                    videoElement.pause();
+                    $('#videoElement').addClass('crosshair-cursor');
 
-                    var x = event.clientX - rect.left; // X-coordinate relative to the video element
-                    var y = event.clientY - rect.top;  // Y-coordinate relative to the video element
+                    $('#videoElement').on('click', function(event){
+                        var rect = videoElement.getBoundingClientRect();
 
-                    var currentTime = videoElement.currentTime;
+                        var x = event.clientX - rect.left; // X-coordinate relative to the video element
+                        var y = event.clientY - rect.top;  // Y-coordinate relative to the video element
 
-                    // Send coordinates to Flask server
-                    $.ajax({
-                        url: '/coordinates',
-                        type: 'POST',
-                        contentType: 'application/json',
-                        data: JSON.stringify({ x: x, y: y, currentTime: currentTime,label : 0 }),
-                        success: function(response) {
-                            console.log('Coordinates sent successfully:', response);
-                        }
+                        var currentTime = videoElement.currentTime;
+
+                        // Send coordinates to Flask server
+                        $.ajax({
+                            url: '/coordinates',
+                            type: 'POST',
+                            contentType: 'application/json',
+                            data: JSON.stringify({ x: x, y: y, currentTime: currentTime,label : 1, ann_obj_id: selectedValue}),
+                            success: function(response) {
+                                console.log('Coordinates sent successfully:', response);
+                            },
+                            error: function(xhr, status, error) {
+                                console.error('Error sending unmask request:', error);
+                            }
+                        });
+
+                        $('#videoElement').removeClass('crosshair-cursor');
+                        $('#videoElement').off('click'); // Remove the click handler after the selection
                     });
-
-                    $('#videoElement').removeClass('crosshair-cursor');
-                    $('#videoElement').off('click'); // Remove the click handler after the selection
-                });
-            });
-
+                } else {
+                    alert('Please select a radio button before unmasking.');
+                }
         });
 
         $(document).ready(function(){
@@ -275,7 +314,7 @@
             });
         });
     });
-    
-    </script>
+});
+</script>
 </body>
 </html>
