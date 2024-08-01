@@ -16,6 +16,9 @@
         .video-container {
             position: relative;
         }
+        .crosshair-cursor {
+            cursor: crosshair;
+        }
     </style>
 </head>
 <body>
@@ -28,7 +31,7 @@
                 <label for="videoUrl">Enter YouTube Video URL:</label>
                 <input type="url" class="form-control" id="videoUrl" name="videoUrl" placeholder="https://www.youtube.com/watch?v=example" required>
             </div>
-            <button type="submit" class="btn btn-primary btn-block">Analyze Video</button>
+            <button type="submit" class="btn btn-primary btn-block">Download Video</button>
         </form>
         
         <div id="videoContainer" class="mt-4">
@@ -49,6 +52,13 @@
                 <input type="hidden" id="filename" name="filename">
                 <button type="submit" class="btn btn-primary btn-block">Trim Video</button>
             </form>
+        </div>
+
+        <div id="maskContainer" class="mt-4" style="display:none;">
+            <button id="maskButton" class="btn btn-primary btn-block">Mask Object</button>
+        </div>
+        <div id="processContainer" class="mt-4" style="display:none;">
+            <button id="processButton" class="btn btn-primary btn-block">Process Video</button>
         </div>
     </div>
 
@@ -97,10 +107,67 @@
                                 </video>
                             </div>
                         `);
+                        $('#maskContainer').show();
+                        $('#filename').val(response.filename);
                     }
                 });
             });
+
+            $('#maskButton').on('click', function(){
+                var videoElement = document.getElementById('videoElement');
+                videoElement.pause();
+                $('#videoElement').addClass('crosshair-cursor');
+
+                $('#videoElement').on('click', function(event){
+                    var rect = videoElement.getBoundingClientRect();
+
+                    var x = event.clientX - rect.left; // X-coordinate relative to the video element
+                    var y = event.clientY - rect.top;  // Y-coordinate relative to the video element
+
+                    var currentTime = videoElement.currentTime;
+
+                    // Send coordinates to Flask server
+                    $.ajax({
+                        url: '/coordinates',
+                        type: 'POST',
+                        contentType: 'application/json',
+                        data: JSON.stringify({ x: x, y: y, currentTime: currentTime }),
+                        success: function(response) {
+                            console.log('Coordinates sent successfully:', response);
+                        }
+                    });
+
+                    $('#videoElement').removeClass('crosshair-cursor');
+                    $('#videoElement').off('click'); // Remove the click handler after the selection
+                });
+            });
         });
+
+        $(document).ready(function(){
+        // Show the "Process Video" button when the video is available
+        // You can call this from appropriate places in your existing code
+        $('#processContainer').show();
+
+        $('#processButton').on('click', function(){
+            var filename = $('#filename').val(); // Assuming the filename is stored in the hidden input field
+
+            $.ajax({
+                url: '/process_video',
+                type: 'POST',
+                contentType: 'application/json',
+                data: JSON.stringify({ output_path: filename }),
+                success: function(response) {
+                    console.log('Video processed successfully:', response);
+                    // Handle response, maybe show a success message or handle the processed video
+                },
+                error: function(xhr, status, error) {
+                    console.error('Error processing video:', error);
+                    // Handle the error, maybe show an error message
+                }
+            });
+        });
+    });
+    
     </script>
 </body>
 </html>
