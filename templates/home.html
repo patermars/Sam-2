@@ -100,6 +100,9 @@
             <button id="maskButton" class="btn btn-primary btn-small-square">
                 <i class="fas fa-mask"></i>
             </button>
+            <button id="unmaskButton" class="btn btn-primary btn-small-square">
+                <i class="fas fa-mask"></i> <i class="fas fa-eye-slash"></i>
+            </button>
         </div>
         
         <div id="videoContainer" class="video-container mt-4">
@@ -207,7 +210,7 @@
                         url: '/coordinates',
                         type: 'POST',
                         contentType: 'application/json',
-                        data: JSON.stringify({ x: x, y: y, currentTime: currentTime }),
+                        data: JSON.stringify({ x: x, y: y, currentTime: currentTime,label : 1 }),
                         success: function(response) {
                             console.log('Coordinates sent successfully:', response);
                         }
@@ -217,6 +220,36 @@
                     $('#videoElement').off('click'); // Remove the click handler after the selection
                 });
             });
+
+            $('#unmaskButton').on('click', function(){
+                var videoElement = document.getElementById('videoElement');
+                videoElement.pause();
+                $('#videoElement').addClass('crosshair-cursor');
+
+                $('#videoElement').on('click', function(event){
+                    var rect = videoElement.getBoundingClientRect();
+
+                    var x = event.clientX - rect.left; // X-coordinate relative to the video element
+                    var y = event.clientY - rect.top;  // Y-coordinate relative to the video element
+
+                    var currentTime = videoElement.currentTime;
+
+                    // Send coordinates to Flask server
+                    $.ajax({
+                        url: '/coordinates',
+                        type: 'POST',
+                        contentType: 'application/json',
+                        data: JSON.stringify({ x: x, y: y, currentTime: currentTime,label : 0 }),
+                        success: function(response) {
+                            console.log('Coordinates sent successfully:', response);
+                        }
+                    });
+
+                    $('#videoElement').removeClass('crosshair-cursor');
+                    $('#videoElement').off('click'); // Remove the click handler after the selection
+                });
+            });
+
         });
 
         $(document).ready(function(){
