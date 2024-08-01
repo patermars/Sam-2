@@ -5,7 +5,18 @@
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>SAM 2 Demo Landing Page</title>
     <link rel="stylesheet" href="https://maxcdn.bootstrapcdn.com/bootstrap/4.5.2/css/bootstrap.min.css">
-    <link rel="stylesheet" href="static/style.css">
+    <style>
+        body {
+            padding: 20px;
+        }
+        .container {
+            max-width: 600px;
+            margin: auto;
+        }
+        .video-container {
+            position: relative;
+        }
+    </style>
 </head>
 <body>
     <div class="container">
@@ -23,10 +34,73 @@
         <div id="videoContainer" class="mt-4">
             <!-- Video and tracking output will be displayed here -->
         </div>
+        
+        <div id="trimContainer" class="mt-4" style="display:none;">
+            <h3 class="text-center">Trim Video</h3>
+            <form id="trimForm" action="/trim" method="post">
+                <div class="form-group">
+                    <label for="startTime">Start Time (in seconds):</label>
+                    <input type="number" class="form-control" id="startTime" name="startTime" required>
+                </div>
+                <div class="form-group">
+                    <label for="endTime">End Time (in seconds):</label>
+                    <input type="number" class="form-control" id="endTime" name="endTime" required>
+                </div>
+                <input type="hidden" id="filename" name="filename">
+                <button type="submit" class="btn btn-primary btn-block">Trim Video</button>
+            </form>
+        </div>
     </div>
 
     <script src="https://code.jquery.com/jquery-3.5.1.min.js"></script>
     <script src="https://maxcdn.bootstrapcdn.com/bootstrap/4.5.2/js/bootstrap.min.js"></script>
-    <script src="static/script.js"></script>
+    <script>
+        $(document).ready(function(){
+            $('#videoForm').on('submit', function(e){
+                e.preventDefault();
+                var videoUrl = $('#videoUrl').val();
+                $('#videoContainer').html(`<p>Downloading video: ${videoUrl}</p>`);
+                
+                $.post('/download', { videoUrl: videoUrl }, function(response){
+                    if (response.error) {
+                        $('#videoContainer').html(`<p>Error: ${response.error}</p>`);
+                    } else {
+                        var videoUrl = `/video/${response.filename}`;
+                        $('#videoContainer').html(`
+                            <div class="video-container">
+                                <video id="videoElement" controls>
+                                    <source src="${videoUrl}" type="video/mp4">
+                                    Your browser does not support the video tag.
+                                </video>
+                            </div>
+                        `);
+                        $('#trimContainer').show();
+                        $('#filename').val(response.filename);
+                    }
+                });
+            });
+
+            $('#trimForm').on('submit', function(e){
+                e.preventDefault();
+                var formData = $(this).serialize();
+                
+                $.post('/trim', formData, function(response){
+                    if (response.error) {
+                        $('#videoContainer').html(`<p>Error: ${response.error}</p>`);
+                    } else {
+                        var trimmedVideoUrl = `/video/${response.filename}`;
+                        $('#videoContainer').html(`
+                            <div class="video-container">
+                                <video id="videoElement" controls>
+                                    <source src="${trimmedVideoUrl}" type="video/mp4">
+                                    Your browser does not support the video tag.
+                                </video>
+                            </div>
+                        `);
+                    }
+                });
+            });
+        });
+    </script>
 </body>
 </html>
