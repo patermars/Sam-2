@@ -20,7 +20,6 @@ def show_mask(mask, ax, obj_id=None, random_color=False):
     mask_image = mask.reshape(h, w, 1) * color.reshape(1, 1, -1)
     ax.imshow(mask_image)
 
-
 def show_points(coords, labels, ax, marker_size=200):
     pos_points = coords[labels == 1]
     neg_points = coords[labels == 0]
@@ -29,7 +28,7 @@ def show_points(coords, labels, ax, marker_size=200):
 
 
 def main(old_video_path, coordinates_list):
-    video_path = f"/content/downloads/{old_video_path}"
+    video_path = f"/content/{old_video_path}"
     torch.autocast(device_type="cuda", dtype=torch.bfloat16).__enter__()
 
     if torch.cuda.get_device_properties(0).major >= 8:
@@ -60,7 +59,7 @@ def main(old_video_path, coordinates_list):
     # Process each coordinate
     for coordinates in coordinates_list:
         x, y, current_time = coordinates['x'], coordinates['y'], coordinates['time']
-        ann_frame_idx = 159  # Assuming this is intentional
+        ann_frame_idx = 0  # Assuming this is intentional
         ann_obj_id = 1  # Example object ID
 
         points = np.array([[x, y]], dtype=np.float32)
@@ -73,21 +72,24 @@ def main(old_video_path, coordinates_list):
             labels=labels,
         )
 
-        plt.figure(figsize=(12, 8))
-        plt.title(f"frame {ann_frame_idx}")
-        plt.imshow(Image.open(os.path.join(video_dir, frame_names[ann_frame_idx])))
-        show_points(points, labels, plt.gca())
-        show_mask((out_mask_logits[0] > 0.0).cpu().numpy(), plt.gca(), obj_id=out_obj_ids[0])
+        # Create figure without axes
+        fig, ax = plt.subplots(figsize=(12, 8))
+        ax.axis('off')
 
-        # Save the plot before showing it
+        frame = Image.open(os.path.join(video_dir, frame_names[ann_frame_idx]))
+        ax.imshow(frame)
+        show_points(points, labels, ax)
+        show_mask((out_mask_logits[0] > 0.0).cpu().numpy(), ax, obj_id=out_obj_ids[0])
+
+        # Save the plot without borders
+        plt.subplots_adjust(left=0, right=1, top=1, bottom=0)
         output_path = f"output_frame_{ann_frame_idx}.png"
-        plt.savefig(output_path)
+        plt.savefig(output_path, bbox_inches='tight', pad_inches=0)
 
-        # Display the plot
-        plt.show()
-
+        plt.close()
         # Clear the current figure to prepare for the next one
         plt.clf()
+
 
         # Propagate the mask throughout the entire video
         video_segments = {}  # video_segments contains the per-frame segmentation results
@@ -102,16 +104,21 @@ def main(old_video_path, coordinates_list):
         if not os.path.exists(output_frames_dir):
             os.makedirs(output_frames_dir)
 
+        print("saving the propogated frames")
+
         for out_frame_idx, frame_name in enumerate(frame_names):
-            plt.figure(figsize=(12, 8))
-            plt.title(f"frame {out_frame_idx}")
-            plt.imshow(Image.open(os.path.join(video_dir, frame_name)))
+            fig, ax = plt.subplots(figsize=(12, 8))
+            ax.axis('off')
+            frame = Image.open(os.path.join(video_dir, frame_name))
+            ax.imshow(frame)
             if out_frame_idx in video_segments:
                 for out_obj_id, out_mask in video_segments[out_frame_idx].items():
-                    show_mask(out_mask, plt.gca(), obj_id=out_obj_id)
+                    show_mask(out_mask, ax, obj_id=out_obj_id)
             output_frame_path = os.path.join(output_frames_dir, f"{out_frame_idx:05d}.png")
-            plt.savefig(output_frame_path)
+            plt.subplots_adjust(left=0, right=1, top=1, bottom=0)
+            plt.savefig(output_frame_path, bbox_inches='tight', pad_inches=0)
             plt.close()
+            plt.clf()
 
     # Merge the frames into a video
     output_video_path = "/content/output_video.mp4"
