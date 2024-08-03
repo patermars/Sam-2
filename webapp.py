@@ -3,27 +3,33 @@ from pytubefix import YouTube
 from pytubefix.cli import on_progress
 import os
 import subprocess
+import base64
 import torch
 import numpy as np
-from PIL import Image
+from PIL import Image, ImageDraw, ImageFont
 from tqdm import tqdm
 from threading import Thread
 import matplotlib.pyplot as plt
 from sam2.build_sam import build_sam2_video_predictor
-from backend_sam2 import main
+from backend_sam2_video import main
+from backend_sam2_image import process_image
+
 
 coordinates_list = []
 
 app = Flask(__name__)
 
 DOWNLOAD_FOLDER = 'downloads'
+SCREENSHOTS_FOLDER = 'processed_image'
 
 if not os.path.exists(DOWNLOAD_FOLDER):
     os.makedirs(DOWNLOAD_FOLDER)
+if not os.path.exists(SCREENSHOTS_FOLDER):
+    os.makedirs(SCREENSHOTS_FOLDER)
 
 @app.route('/')
 def home():
-    return render_template('home.html')
+    return render_template('index.html')
 
 @app.route('/download', methods=['POST'])
 def download_video():
@@ -31,13 +37,13 @@ def download_video():
     try:
         yt = YouTube(video_url, on_progress_callback=on_progress)
         ys = yt.streams.get_highest_resolution()
-        filename="0.mp4"
+        filename = "0.mp4"
         video_path = os.path.join(DOWNLOAD_FOLDER, filename)
         print(video_path)
-        counter=0
+        counter = 0
         while os.path.exists(video_path):
             counter += 1
-            filename=f"{counter}.mp4"
+            filename = f"{counter}.mp4"
             video_path = os.path.join(DOWNLOAD_FOLDER, filename)
         
         video_path = ys.download(output_path=DOWNLOAD_FOLDER, filename=filename)
@@ -50,17 +56,26 @@ def download_video():
 def serve_video(filename):
     return send_from_directory(DOWNLOAD_FOLDER, filename)
 
+# Add this route to serve screenshots
+@app.route('/processed_image/<filename>')
+def serve_screenshot(filename):
+    return send_from_directory(SCREENSHOTS_FOLDER, filename)
+
+@app.route('/<filename>')
+def serve_output(filename):
+    return send_from_directory('/content', filename)
+
 @app.route('/coordinates', methods=['POST'])
 def log_coordinates():
     data = request.json
     x = data['x']
     y = data['y']
     current_time = data['currentTime']
-    label=data['label']
-    obj_id=data['ann_obj_id']
-    coordinates = {'x': x, 'y': y, 'time': current_time,'label':label,'ann_obj_id':obj_id}
+    label = data['label']
+    obj_id = data['ann_obj_id']
+    coordinates = {'x': x, 'y': y, 'time': current_time, 'label': label, 'ann_obj_id': obj_id}
     coordinates_list.append(coordinates)
-    print(f'Coordinates received - X: {x}, Y: {y}, Time: {current_time}, Label : {label}, Object ID :{obj_id}')
+    print(f'Coordinates received - X: {x}, Y: {y}, Time: {current_time}, Label: {label}, Object ID: {obj_id}')
     return jsonify({'status': 'success'})
 
 @app.route('/trim', methods=['POST'])
@@ -97,7 +112,6 @@ def trim_video():
 
 @app.route('/process_video', methods=['POST'])
 def process_video_endpoint():
-
     print("pass process video")
     data = request.get_json()
     output_path = data.get('output_path')
@@ -105,8 +119,10 @@ def process_video_endpoint():
     print(output_path)
     
     if output_path:
-        main(output_path,coordinates_list)
-        return jsonify({"message": "Video processed successfully"})
+        print("great job")
+        print("coordinates list:", coordinates_list)
+        output_video_path = main(output_path, coordinates_list)
+        return jsonify({"message": "Video processed successfully","filename":output_video_path})
     else:
         return jsonify({"error": "No output path provided"}), 400
 
@@ -125,6 +141,14 @@ def get_frame_rate(video_path):
             return frame_rate
     return None
 
+@app.route('/screenshot', methods=['POST'])
+def save_screenshot():
+
+    data = request.get_json()
+    output_path = data.get('output_path')
+
+    image_path=process_image(coordinates_list,output_path)
+    return jsonify({'status': 'success','path':image_path})
 
 if __name__ == '__main__':
     app.run(debug=True)
